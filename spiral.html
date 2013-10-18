@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Spiral Demo</title>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<script>
+/*
+------------
+-Exercise 3-
+------------
+Write some code that accepts an integer and prints the integers
+from 0 to that input integer in a spiral format.
+
+For example, if I supplied 24 the output would be:
+
+20	21	22	23	24
+19	6	7	8	9
+18	5	0	1	10
+17	4	3	2	11
+16	15	14	13	12
+
+*/
+
+$(document).ready(function() {
+	$("#btnSubmit" ).click(function() {
+		//Get the input value
+		var input = $("#txtInput").val();
+		
+		//Validate text input - required, numeric, integer, greater than 0
+		var re = /^-?\d\d*$/
+		if (input.length == 0 || !re.test(input)) {
+			$("#output").html("Please enter an integer.");
+		}
+		else
+		{
+			GenerateSpiral(parseInt(input));
+		}
+	});
+});
+
+function GenerateSpiral(input)
+{
+	//Calculate the array size
+	//Find the size of a square that will contain all the number to get the size of the array
+	//Add 1 to account for starting with 0
+	var size = Math.ceil(Math.sqrt(input + 1));
+	
+	//Make two-dimensional array of size, e.g. 5x5
+	var spiral = new Array(size);
+	for (var i = 0; i < size; i++) {
+		spiral[i] = new Array(size);
+	}
+	
+	//Find center position by rounding up to nearest odd number, then subtract 1 for a zero-based array
+	var center = Math.ceil(size / 2) - 1;
+	
+	//Set 0 in the center position
+	spiral[center][center] = 0;
+		
+	//Notice that you go:
+	//1 right, 1 down, 2 left, 2 up, 3 right, 3 down, 4 left, 4 up, etc.
+	//So basically the pattern is you travel right, down, left, up for a number of steps that increments every two direction changes.
+	
+	var stepsInDirection = 1; //How many steps to take in a direction
+	var stepsCount = 0; //How many steps have been taken in the direction
+	var direction = "E"; //The current direction of travel
+	var stepsInDirectionCount = 0; //How many times traveled in the same direction
+	var x = center; //Set the center start point
+	var y = center; //Set the center start point           
+
+	for (var i = 1; i <= input; i++) {
+		switch (direction){
+			case "E":
+				x += 1;
+				break;
+			case "S":
+				y += 1;
+				break;
+			case "W":
+				x -= 1;
+				break;
+			case "N":
+				y -= 1;
+				break;
+		}
+
+		spiral[y][x] = i;
+
+		stepsCount += 1;
+
+		if (stepsCount == stepsInDirection) {
+			stepsCount = 0;
+			stepsInDirectionCount += 1;
+
+			if (stepsInDirectionCount == 2) {
+				stepsInDirection += 1;
+				stepsInDirectionCount = 0;
+			}
+
+			switch (direction) {
+				case "E":
+					direction = "S";
+					break;
+				case "S":
+					direction = "W";
+					break;
+				case "W":
+					direction = "N";
+					break;
+				case "N":
+					direction = "E";
+					break;
+			}
+		}
+	}
+	
+	//Output the array
+	var $table = $("<table>");
+	
+	for (var i = 0; i < size; i++) {
+		var row = "";
+		for (var j = 0; j < size; j++) {
+			var value = spiral[i][j];
+			if (typeof value === 'undefined') {
+				value = "";
+			}
+			
+			row += ("<td>" + value + "</td>");
+		}
+		
+		$table.append("<tr>" + row);			
+	}
+	
+	//Add table to output
+	$("#output").empty();
+	$("#output").append($table);
+}
+</script>
+</head>
+
+<body>
+Enter an integer to print out from 0 to that input integer in a spiral format.
+<br />
+<input type="number" name="txtInput" id="txtInput">
+<br />
+<button type="submit" name="btnSubmit" id="btnSubmit">Generate Spiral</button>
+<br />
+<br />
+<div id="output"></div>
+</body>
+</html> 
