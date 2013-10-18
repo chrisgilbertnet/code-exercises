@@ -31,9 +31,7 @@ $(document).ready(function() {
 		var re = /^-?\d\d*$/
 		if (input.length == 0 || !re.test(input)) {
 			$("#output").html("Please enter an integer.");
-		}
-		else
-		{
+		} else {
 			GenerateSpiral(parseInt(input));
 		}
 	});
