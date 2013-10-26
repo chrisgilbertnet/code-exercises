@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" data-framework="jquery">
+<head>
+<meta charset="UTF-8">
+<title>To-Do List</title>
+<style>
+	html,
+	body {
+		padding: 0;
+	}
+
+	body {
+		font: 14px 'Helvetica Neue', Helvetica, Arial, sans-serif;
+		line-height: 1.7em;
+		background: #eeeeee;
+		color: #4d4d4d;
+		width: 550px;
+		margin: 0 auto;
+	}
+	
+	input {
+		width: 375px;
+		height: 25px;
+		margin-top: 2px;
+	}
+	
+	#todolist {
+		list-style: none outside;
+		position: relative;
+		left: -40px;
+	}
+	
+	li {
+		height: 35px;
+		border-bottom: 1px dashed #333333;
+		width: 450px
+	}
+	
+	.text {
+		position: relative;
+		top: 7px;
+	}
+	
+	.remove {
+		color: #880000;
+		display: block;
+		clear: both;
+		cursor: pointer;
+		position: absolute;
+		left: 470px;
+		margin: -17px 0px 0px 0px;
+	}
+	
+	#qunit {
+		padding-top:100px;
+	}
+	
+	button.css3button {
+		font-family: Arial, Helvetica, sans-serif;
+		font-size: 14px;
+		color: #050505;
+		padding: 10px 20px;
+		background: -moz-linear-gradient(
+			top,
+			#ffffff 0%,
+			#ebebeb 50%,
+			#dbdbdb 50%,
+			#b5b5b5);
+		background: -webkit-gradient(
+			linear, left top, left bottom, 
+			from(#ffffff),
+			color-stop(0.50, #ebebeb),
+			color-stop(0.50, #dbdbdb),
+			to(#b5b5b5));
+		-moz-border-radius: 10px;
+		-webkit-border-radius: 10px;
+		border-radius: 10px;
+		border: 1px solid #949494;
+		-moz-box-shadow:
+			0px 1px 3px rgba(000,000,000,0.5),
+			inset 0px 0px 2px rgba(255,255,255,1);
+		-webkit-box-shadow:
+			0px 1px 3px rgba(000,000,000,0.5),
+			inset 0px 0px 2px rgba(255,255,255,1);
+		box-shadow:
+			0px 1px 3px rgba(000,000,000,0.5),
+			inset 0px 0px 2px rgba(255,255,255,1);
+		text-shadow:
+			0px -1px 0px rgba(000,000,000,0.2),
+			0px 1px 0px rgba(255,255,255,1);
+	}
+	
+	button:hover {
+		cursor: pointer;
+	}
+
+	
+</style>
+<link rel="stylesheet" href="http://code.jquery.com/qunit/qunit-1.12.0.css" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<script src="http://code.jquery.com/qunit/qunit-1.12.0.js"></script>
+<script>
+jQuery(function ($) {
+	'use strict';
+
+	var app = {
+			init: function () {
+					this.todos = utils.dataStore('todos'); //Load todos from data store
+					this.bindEvents(); //Wire up events
+					this.renderList(); //Render the todo list
+			},	
+			bindEvents : function () {
+					$(document).on('dblclick', '#todolist li', this.dblClick);
+					$(document).on('blur', '.edit', this.editOnBlur);
+					$(document).on('click', '#btnClear', this.btnClearClick);
+					$(document).on('click', '#btnSubmit', this.btnSubmitClick);
+					$(document).on('click', '.remove', this.remove);
+					$(document).on({
+							mouseenter: function () {
+								$(this).find('.remove').show();
+						},
+							mouseleave: function () {
+								$(this).find('.remove').hide();
+						}
+					}, '#todolist li');
+			},
+			renderList : function () {
+					$('#todolist').empty();
+					$.each(app.todos, function (i) {
+						$('#todolist').append(
+							'<li class="item"><span class="text">' + app.todos[i].text + '</span>' + 
+							'<input type="text" class="edit" style="display:none" />' + 
+							'<span class="remove" style="display:none" title="Remove">X</span></li>'
+						);
+					});
+					
+					utils.dataStore('todos', app.todos); //Persist the todos to the dataStore
+			},
+			dblClick : function () {
+					var $span = $('span.text', $(this));
+					var $input = $('input', $(this));
+					var $remove = $('span.remove', $(this));
+					$span.hide();
+					$input.val($span.text());
+					$input.show();
+					$remove.hide();
+					$input.focus();
+			},
+			editOnBlur : function () {
+					var $spanTodoText = $(this).prev().text();
+					var todo = { 
+							index: utils.arrayObjectIndexOf(app.todos, $spanTodoText, 'text'),
+							text: $(this).val()
+					};
+								
+					app.addUpdate(todo);
+					app.renderList();
+			},
+			btnClearClick : function () {
+					utils.dataStore('todos', new Array());
+					app.todos = utils.dataStore('todos');
+					app.renderList();
+			},
+			btnSubmitClick : function (e) {
+					e.preventDefault();
+					var todo = { 
+							text:$('#txtAdd').val()
+					};
+					
+					app.addUpdate(todo); //Add the todo
+					$('#txtAdd').val(''); //Clear the text input
+					app.renderList();
+			},
+			remove : function () {
+					var $spanTodoText = $(this).closest('li').find('span:first').text(); //Find the todo text
+					app.removeTodo($spanTodoText); //Remove the todo
+					app.renderList();
+			},
+			removeTodo : function (text) {
+				app.todos.splice(utils.arrayObjectIndexOf(app.todos, text, 'text'), 1); //Remove the item from the array by the index
+			},
+			addUpdate : function (todo) {
+					if (todo.text && (todo.text.length > 0 && todo.text.length <= 50)) {
+						if (todo.index >= 0) {
+							app.todos[todo.index] = todo; //Update todo
+						} else {
+							app.todos.push({ 
+									text: todo.text, //Add todo
+							});
+						}
+					} else {
+						alert('Please enter todo text (max length:50 characters)');
+					}
+			}
+	};
+	
+	var utils = {
+		dataStore : function (name, data) {
+				//TODO: Use AJAX call to web service to store todos in database
+				if (arguments.length > 1) {
+					return localStorage.setItem(name, JSON.stringify(data));
+				} else {
+					var store = localStorage.getItem(name);
+					return (store && JSON.parse(store)) || [];
+				}			
+		},
+		arrayObjectIndexOf : function (array, searchTerm, property) {
+				for(var i = 0, len = array.length; i < len; i++) {
+					if (array[i][property] === searchTerm) return i;
+				}
+				
+				return -1;
+		}
+	};
+	
+	var tests = {
+			run : function () {
+					$('#qunit').show();
+					test('add todo', this.addTodoTest);
+					test('add empty todo', this.addEmptyTodoTest);
+					test('add max length todo', this.addMaxLengthTodoTest);
+					test('remove todo', this.removeTodoTest);
+					test('update todo', this.updateTodoTest);
+					test('clear button click removes all todos', this.clearClickTest);
+					test('blur on edit cancels/saves todo', this.blurTest);
+					test('double click shows edit text box', this.doubleClickTest);
+			},
+			clearTodos : function () {
+					utils.dataStore('todos', new Array());
+					app.todos = utils.dataStore('todos');
+			},
+			addTodoTest : function () {
+					//Arrange
+					tests.clearTodos();					
+					var todo = { 
+							text: 'test todo'
+					};
+					
+					//Act
+					app.addUpdate(todo);
+					
+					//Assert
+					equal(app.todos[0].text, 'test todo', 'Add todo text not correct');
+			},
+			addEmptyTodoTest : function () {
+					//Arrange
+					tests.clearTodos();					
+					var todo = { 
+							text: ''
+					};
+					
+					//Act
+					app.addUpdate(todo);
+					
+					//Assert
+					equal(app.todos.length, 0, 'Add empty todo text not handled');
+			},
+			addMaxLengthTodoTest : function () {
+					//Arrange
+					tests.clearTodos();					
+					var todo = { 
+							text: '00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'
+					};
+					
+					//Act
+					app.addUpdate(todo);
+					
+					//Assert
+					equal(app.todos.length, 0, 'Add max length todo text not handled');
+			},			
+			removeTodoTest : function () {
+					//Arrange
+					tests.clearTodos();
+					var todo = { 
+							text: 'test todo'
+					};
+					
+					//Act
+					app.removeTodo(todo.text);
+					
+					//Assert
+					equal(app.todos.length, 0, 'Todo was not removed');
+			},
+			updateTodoTest : function () {
+					//Arrange
+					tests.clearTodos();
+					var todo = { 
+							text: 'test todo'
+					};
+					app.addUpdate(todo.text);
+					
+					//Act
+					todo.index = 0;
+					todo.text = 'todo updated';
+					app.addUpdate(todo);
+					
+					//Assert
+					equal(app.todos[0].text, 'todo updated', 'Todo was not updated');
+			},
+			doubleClickTest : function () {
+					//Arrange
+					tests.clearTodos();					
+					var todo = { 
+							text: 'test doubleclick todo'
+					};
+					app.addUpdate(todo);
+					app.renderList();
+					
+					//Act
+					$('.text:first').dblclick();
+					
+					//Assert
+					ok($('.edit:first').is(':visible'), 'Todo edit text input not visible on double click');
+			},
+			blurTest : function () {
+					//Arrange
+					tests.clearTodos();					
+					var todo = { 
+							text: 'test blur todo'
+					};
+					app.addUpdate(todo);
+					app.renderList();
+					$('.text:first').dblclick();
+					
+					//Act
+					$('.edit:first').val('updated text');
+					$('.edit:first').focus();
+					$('.edit:first').blur();
+					
+					//Assert
+					ok($('.edit:first').is(':hidden'), 'Todo edit text input is still visible on blur');
+					equal(app.todos[0].text, 'updated text', 'Todo was not edited on blur');	
+			},
+			clearClickTest : function () {
+					//Arrange
+					tests.clearTodos();		
+					var todo = { 
+							text: 'test clear click todo'
+					};
+					app.addUpdate(todo);
+					
+					//Act
+					$('#btnClear').click();
+					
+					//Assert
+					ok(app.todos.length == 0, 'Clear button click did not remove todos');
+			}
+	};	
+	
+	app.init();	
+	//tests.run();	
+});
+
+</script>
+</head>
+
+<body>
+<header>
+	<h1>To-Do List</h1>
+</header>
+
+<section id="add">
+	<form>
+		<input type="text" id="txtAdd" placeholder="Add a new item..." maxlength="50" />
+		<button type="submit" id="btnSubmit" class="css3button">Add!</button>
+	</form>
+</section>
+
+<section id="list">
+	<ul id="todolist">
+	</ul>
+</section>
+
+<footer>
+Note: Double-click to edit an existing item or <a href="#" id="btnClear">remove all items</a> to start over.
+</footer>
+
+<div id="qunit" style="display:none"></div>
+
+</body
+</html> 
